@@ -6,7 +6,7 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm]       = useState({ email: '', password: '' });
+  const [form, setForm]       = useState({ username: '', password: '' });
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -19,8 +19,8 @@ export default function Login() {
 
   const validate = () => {
     const errs = {};
-    if (!form.email) errs.email = 'Email không được để trống';
-    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Địa chỉ email không hợp lệ';
+    if (!form.username) errs.username = 'Tên đăng nhập không được để trống';
+    else if (form.username.length < 3) errs.username = 'Tên đăng nhập tối thiểu 3 ký tự';
     if (!form.password) errs.password = 'Mật khẩu không được để trống';
     else if (form.password.length < 6) errs.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     return errs;
@@ -35,13 +35,26 @@ export default function Login() {
       await login(form);
       navigate('/');
     } catch (err) {
-      const serverErrors = err?.response?.data?.data;
-      if (serverErrors && typeof serverErrors === 'object') {
-        const mapped = {};
-        Object.entries(serverErrors).forEach(([k, v]) => { mapped[k] = Array.isArray(v) ? v[0] : v; });
-        setErrors(mapped);
+      if (!err.response) {
+        setErrors({ general: 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng.' });
+        return;
+      }
+      const responseData = err.response.data;
+      if (responseData && responseData.data) {
+        const serverErrors = responseData.data;
+        if (typeof serverErrors === 'object' && !Array.isArray(serverErrors)) {
+          const mapped = {};
+          Object.entries(serverErrors).forEach(([k, v]) => {
+            mapped[k] = Array.isArray(v) ? v[0] : v;
+          });
+          setErrors(mapped);
+        } else {
+          setErrors({ general: responseData.message || 'Đã có lỗi xảy ra. Vui lòng thử lại.' });
+        }
+      } else if (responseData && responseData.message) {
+        setErrors({ general: responseData.message });
       } else {
-        setErrors({ general: 'Thông tin đăng nhập không chính xác. Vui lòng thử lại.' });
+        setErrors({ general: 'Thông tin đăng nhập không chính xác hoặc lỗi hệ thống.' });
       }
     } finally {
       setLoading(false);
@@ -65,24 +78,17 @@ export default function Login() {
 
   return (
     <div style={S.page}>
-
-      {/* ── Mesh gradient background ── */}
       <div style={S.mesh1} />
       <div style={S.mesh2} />
       <div style={S.mesh3} />
       <div style={S.gridLines} />
 
       <div style={S.container}>
-
-        {/* ══ LEFT — Hero panel ══ */}
         <div style={S.heroPanel}>
-
-          {/* Floating orbs */}
           <div style={S.orb1} />
           <div style={S.orb2} />
           <div style={S.orb3} />
 
-          {/* Logo */}
           <div style={S.logoRow}>
             <div style={S.logoBox}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3">
@@ -94,7 +100,6 @@ export default function Login() {
             <span style={S.logoText}>Yii2 Blog</span>
           </div>
 
-          {/* Hero content */}
           <div style={S.heroContent}>
             <div style={S.heroBadge}>✦ Nền tảng viết blog thế hệ mới</div>
             <h2 style={S.heroTitle}>
@@ -106,7 +111,6 @@ export default function Login() {
               kết nối với độc giả trên toàn thế giới.
             </p>
 
-            {/* Stats */}
             <div style={S.statsRow}>
               {[
                 { val: '10K+', label: 'Bài viết' },
@@ -121,7 +125,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Testimonial card */}
           <div style={S.testimonial}>
             <div style={S.testimonialAvatar}>TN</div>
             <div>
@@ -131,11 +134,8 @@ export default function Login() {
           </div>
         </div>
 
-        {/* ══ RIGHT — Login form ══ */}
         <div style={S.formPanel}>
-
           <div style={S.formInner}>
-            {/* Header */}
             <div style={S.formHead}>
               <h1 style={S.formTitle}>Đăng nhập</h1>
               <p style={S.formSub}>
@@ -144,7 +144,6 @@ export default function Login() {
               </p>
             </div>
 
-            {/* Error banner */}
             {errors.general && (
               <div style={S.errorBanner}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
@@ -157,30 +156,28 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} noValidate style={S.form}>
-
-              {/* Email */}
               <div style={S.field}>
-                <label style={S.label}>Địa chỉ Email</label>
+                <label style={S.label}>Tên đăng nhập</label>
                 <div style={{ position: 'relative' }}>
                   <svg style={S.iconLeft} width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke={focused === 'email' ? '#818cf8' : '#64748b'} strokeWidth="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
+                    stroke={focused === 'username' ? '#818cf8' : '#64748b'} strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
                   </svg>
                   <input
-                    id="email" name="email" type="email"
-                    value={form.email} onChange={handleChange}
-                    placeholder="example@company.com"
+                    id="username" name="username" type="text"
+                    value={form.username} onChange={handleChange}
+                    placeholder="Nhập tên đăng nhập"
                     disabled={loading}
-                    style={inputStyle('email')}
-                    onFocus={() => setFocused('email')}
+                    style={inputStyle('username')}
+                    onFocus={() => setFocused('username')}
                     onBlur={() => setFocused('')}
+                    autoComplete="username"
                   />
                 </div>
-                {errors.email && <span style={S.errMsg}>{errors.email}</span>}
+                {errors.username && <span style={S.errMsg}>{errors.username}</span>}
               </div>
 
-              {/* Password */}
               <div style={S.field}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={S.label}>Mật khẩu</label>
@@ -213,7 +210,6 @@ export default function Login() {
                 {errors.password && <span style={S.errMsg}>{errors.password}</span>}
               </div>
 
-              {/* Submit */}
               <button type="submit" disabled={loading} style={{
                 ...S.submitBtn,
                 opacity: loading ? 0.75 : 1,
@@ -235,14 +231,12 @@ export default function Login() {
               </button>
             </form>
 
-            {/* Divider */}
             <div style={S.divider}>
               <span style={S.dividerLine} />
               <span style={S.dividerText}>Hoặc tiếp tục với</span>
               <span style={S.dividerLine} />
             </div>
 
-            {/* Social buttons */}
             <div style={S.socialRow}>
               {[
                 { name: 'Google', icon: (
@@ -261,7 +255,6 @@ export default function Login() {
                 </button>
               ))}
             </div>
-
           </div>
         </div>
       </div>
@@ -269,7 +262,6 @@ export default function Login() {
   );
 }
 
-/* ─── Styles ─────────────────────────────────── */
 const S = {
   page: {
     minHeight: '100vh',
@@ -282,8 +274,6 @@ const S = {
     overflow: 'hidden',
     padding: '1.5rem',
   },
-
-  /* Mesh bg */
   mesh1: { position:'fixed', top:'-20%', left:'-10%', width:'55vw', height:'55vw', borderRadius:'50%', background:'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 65%)', pointerEvents:'none' },
   mesh2: { position:'fixed', bottom:'-15%', right:'-5%', width:'45vw', height:'45vw', borderRadius:'50%', background:'radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 65%)', pointerEvents:'none' },
   mesh3: { position:'fixed', top:'40%', left:'40%', width:'30vw', height:'30vw', borderRadius:'50%', background:'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 65%)', pointerEvents:'none' },
@@ -292,7 +282,6 @@ const S = {
     backgroundImage:'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
     backgroundSize:'60px 60px',
   },
-
   container: {
     position:'relative', zIndex:1,
     display:'flex',
@@ -302,8 +291,6 @@ const S = {
     overflow:'hidden',
     boxShadow:'0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
   },
-
-  /* Hero panel */
   heroPanel: {
     width:'52%', position:'relative',
     background:'linear-gradient(145deg, #0f0c29, #302b63, #24243e)',
@@ -314,7 +301,6 @@ const S = {
   orb1: { position:'absolute', top:'-80px', right:'-60px', width:'300px', height:'300px', borderRadius:'50%', background:'radial-gradient(circle, rgba(99,102,241,0.4), transparent 70%)', pointerEvents:'none' },
   orb2: { position:'absolute', bottom:'-60px', left:'-40px', width:'250px', height:'250px', borderRadius:'50%', background:'radial-gradient(circle, rgba(139,92,246,0.35), transparent 70%)', pointerEvents:'none' },
   orb3: { position:'absolute', top:'50%', left:'45%', width:'200px', height:'200px', borderRadius:'50%', background:'radial-gradient(circle, rgba(59,130,246,0.25), transparent 70%)', pointerEvents:'none' },
-
   logoRow: { display:'flex', alignItems:'center', gap:'0.7rem', position:'relative', zIndex:1 },
   logoBox: {
     width:'40px', height:'40px', borderRadius:'12px',
@@ -323,7 +309,6 @@ const S = {
     boxShadow:'0 4px 16px rgba(99,102,241,0.5)',
   },
   logoText: { fontSize:'1.1rem', fontWeight:'700', color:'#fff', letterSpacing:'-0.3px' },
-
   heroContent: { marginTop:'auto', marginBottom:'2rem', position:'relative', zIndex:1 },
   heroBadge: {
     display:'inline-flex', alignItems:'center', gap:'6px',
@@ -345,12 +330,10 @@ const S = {
     WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
   },
   heroDesc: { fontSize:'0.9rem', color:'rgba(255,255,255,0.55)', lineHeight:'1.7', margin:'0 0 2rem', maxWidth:'340px' },
-
   statsRow: { display:'flex', gap:'2rem' },
   statItem: { display:'flex', flexDirection:'column', gap:'2px' },
   statVal: { fontSize:'1.4rem', fontWeight:'800', color:'#fff' },
   statLabel: { fontSize:'0.75rem', color:'rgba(255,255,255,0.45)', fontWeight:'500' },
-
   testimonial: {
     display:'flex', alignItems:'center', gap:'0.85rem',
     padding:'1rem 1.25rem',
@@ -369,8 +352,6 @@ const S = {
   },
   testimonialText: { fontSize:'0.8rem', color:'rgba(255,255,255,0.75)', lineHeight:'1.5', margin:'0 0 3px' },
   testimonialAuthor: { fontSize:'0.73rem', color:'rgba(255,255,255,0.4)', fontWeight:'500' },
-
-  /* Form panel */
   formPanel: {
     flex:1,
     background:'#0d1117',
@@ -379,21 +360,17 @@ const S = {
     borderLeft:'1px solid rgba(255,255,255,0.06)',
   },
   formInner: { width:'100%', maxWidth:'360px' },
-
   formHead: { marginBottom:'2rem' },
   formTitle: { fontSize:'1.9rem', fontWeight:'800', color:'#f1f5f9', margin:'0 0 0.4rem', letterSpacing:'-0.8px' },
   formSub: { fontSize:'0.85rem', color:'rgba(255,255,255,0.4)', margin:0 },
   inlineLink: { color:'#818cf8', fontWeight:'600', textDecoration:'none' },
-
   errorBanner: {
     display:'flex', alignItems:'center', gap:'0.6rem',
     padding:'0.8rem 1rem', marginBottom:'1.25rem',
     background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)',
     borderRadius:'12px', color:'#fca5a5', fontSize:'0.83rem',
   },
-
   form: { display:'flex', flexDirection:'column', gap:'1.25rem' },
-
   field: { display:'flex', flexDirection:'column', gap:'0.45rem' },
   label: { fontSize:'0.8rem', fontWeight:'600', color:'rgba(255,255,255,0.6)', letterSpacing:'0.2px' },
   iconLeft: {
@@ -401,16 +378,13 @@ const S = {
     pointerEvents:'none', transition:'stroke 0.2s',
   },
   errMsg: { fontSize:'0.76rem', color:'#f87171' },
-
   forgotLink: { fontSize:'0.78rem', color:'#818cf8', textDecoration:'none', fontWeight:'500' },
-
   eyeBtn: {
     position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)',
     background:'none', border:'none', cursor:'pointer',
     color:'rgba(255,255,255,0.3)', display:'flex', alignItems:'center',
     padding:'4px', borderRadius:'6px', transition:'color 0.2s',
   },
-
   submitBtn: {
     width:'100%', padding:'0.95rem 1.5rem', marginTop:'0.5rem',
     background:'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #4f46e5 100%)',
@@ -429,11 +403,9 @@ const S = {
     borderTopColor:'#fff', borderRadius:'50%',
     animation:'spin 0.7s linear infinite',
   },
-
   divider: { display:'flex', alignItems:'center', gap:'1rem', margin:'1.5rem 0 1.25rem' },
   dividerLine: { flex:1, height:'1px', background:'rgba(255,255,255,0.08)' },
   dividerText: { fontSize:'0.75rem', color:'rgba(255,255,255,0.3)', whiteSpace:'nowrap', fontWeight:'500' },
-
   socialRow: { display:'flex', gap:'0.75rem' },
   socialBtn: {
     flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:'0.6rem',
