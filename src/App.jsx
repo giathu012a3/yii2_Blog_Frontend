@@ -2,13 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Home from './pages/Home';
-
-const Register = () => (
-  <div style={{ color: '#fff', textAlign: 'center', padding: '4rem', fontFamily: 'Inter, sans-serif', background: '#0f0f1a', minHeight: '100vh' }}>
-    <h1>📝 Register</h1>
-    <p style={{ color: 'rgba(255,255,255,0.5)' }}>Trang đăng ký — coming soon!</p>
-  </div>
-);
+import Register from './pages/Register';
+import PostDetail from './pages/PostDetail';
 
 export default function App() {
   return (
@@ -18,6 +13,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/posts/:id" element={<PostDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
